@@ -1,0 +1,44 @@
+{
+    "name": "resume-optimizer-backend",
+    "version": "1.0.0",
+    "description": "Backend for JD-aligned resume optimization system",
+    "main": "dist/server.js",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:studio": "prisma studio"
+    },
+    "keywords": [
+        "resume",
+        "optimization",
+        "ats",
+        "ai"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "adm-zip": "^0.5.16",
+        "cors": "^2.8.5",
+        "docxtemplater": "^3.54.4",
+        "dotenv": "^16.4.7",
+        "express": "^4.21.2",
+        "fast-xml-parser": "^4.5.0",
+        "multer": "^1.4.5-lts.1",
+        "openai": "^4.77.3",
+        "pizzip": "^3.1.7"
+    },
+    "devDependencies": {
+        "@types/adm-zip": "^0.5.5",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^5.0.0",
+        "@types/multer": "^1.4.12",
+        "@types/node": "^22.10.5",
+        "prisma": "^5.22.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.9.3"
+    }
+}
