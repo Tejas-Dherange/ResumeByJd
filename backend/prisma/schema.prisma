@@ -1,0 +1,95 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Resume {
+  id            String   @id @default(uuid())
+  filename      String
+  originalPath  String
+  uploadedAt    DateTime @default(now())
+  
+  // Relations
+  jobDescriptions JobDescription[]
+  analyses        Analysis[]
+  optimizedResumes OptimizedResume[]
+  
+  @@map("resumes")
+}
+
+model JobDescription {
+  id          String   @id @default(uuid())
+  resumeId    String
+  jdText      String   @db.Text
+  mustHave    String[] // Array of required skills/keywords
+  niceToHave  String[] // Array of preferred skills/keywords
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  resume   Resume     @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  analyses Analysis[]
+  
+  @@map("job_descriptions")
+  @@index([resumeId])
+}
+
+model Analysis {
+  id              String   @id @default(uuid())
+  resumeId        String
+  jobDescriptionId String
+  
+  // Gap analysis results
+  present         String[] // Keywords strongly present
+  weak            String[] // Keywords weakly present
+  missing         String[] // Keywords completely missing
+  
+  // Coverage metrics
+  coveragePercent Float
+  matchScore      Float
+  
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  resume          Resume          @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescription  JobDescription  @relation(fields: [jobDescriptionId], references: [id], onDelete: Cascade)
+  optimizedResumes OptimizedResume[]
+  
+  @@map("analyses")
+  @@index([resumeId])
+  @@index([jobDescriptionId])
+}
+
+model OptimizedResume {
+  id                String   @id @default(uuid())
+  resumeId          String
+  analysisId        String
+  
+  // Content
+  optimizedContent  Json     // Structured resume JSON
+  optimizedPath     String?  // Path to generated DOCX
+  
+  // Validation
+  isValid           Boolean  @default(false)
+  validationMessage String?
+  
+  // ATS Scores
+  atsScoreBefore    Float
+  atsScoreAfter     Float
+  
+  // Metadata
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  resume   Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  
+  @@map("optimized_resumes")
+  @@index([resumeId])
+  @@index([analysisId])
+}
