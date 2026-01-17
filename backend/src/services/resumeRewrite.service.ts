@@ -19,7 +19,8 @@ class ResumeRewriteService {
      */
     async rewriteResume(
         originalResume: ParsedResume,
-        weakKeywords: string[]
+        weakKeywords: string[],
+        notFoundSkills: string[]
     ): Promise<OptimizedResumeContent> {
         try {
             console.log('📝 Resume Rewrite Started:', {
@@ -51,7 +52,7 @@ class ResumeRewriteService {
 
             // Call LLM to optimize
             const optimizedSections = await geminiClient.generateJSON<any>(
-                PROMPTS.rewriteResume.user(resumeJSON, weakKeywords),
+                PROMPTS.rewriteResume.user(resumeJSON, weakKeywords,notFoundSkills),
                 PROMPTS.rewriteResume.system,
                 0.2 // Very low temperature for consistency
             );

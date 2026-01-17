@@ -1,8 +1,18 @@
-export default function GapTable() {
-    // Mock data - in real app this would come from props/API
-    const present = ['React', 'TypeScript', 'REST API'];
-    const weak = ['Node.js', 'PostgreSQL', 'CI/CD'];
-    const missing = ['AWS', 'Docker', 'Kubernetes', 'Microservices'];
+interface GapTableProps {
+    gapAnalysis: {
+        present: string[];
+        weak: string[];
+        missing: string[];
+        coverage: {
+            mustHavePercent: number;
+            niceToHavePercent: number;
+            overall: number;
+        };
+    };
+}
+
+export default function GapTable({ gapAnalysis }: GapTableProps) {
+    const { present, weak, missing } = gapAnalysis;
 
     return (
         <div className="card mb-8">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { AnalysisResponse } from '../types/api.types';
 
 /**
  * Custom hook for managing resume optimization flow
@@ -9,6 +10,7 @@ export const useResumeFlow = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [analysisData, setAnalysisData] = useState<AnalysisResponse['data'] | null>(null);
 
     const uploadResume = async (file: File, jdText: string) => {
         setLoading(true);
@@ -25,7 +27,10 @@ export const useResumeFlow = () => {
                 );
 
                 if (analysisResponse.success) {
-                    navigate(`/analysis/${analysisResponse.data.analysisId}`);
+                    setAnalysisData(analysisResponse.data);
+                    navigate(`/analysis/${analysisResponse.data.analysisId}`, {
+                        state: { analysisData: analysisResponse.data }
+                    });
                 }
             }
         } catch (err: any) {
@@ -43,7 +48,14 @@ export const useResumeFlow = () => {
             const response = await apiService.optimizeResume(analysisId);
 
             if (response.success) {
-                navigate(`/result/${response.data.optimizedResumeId}`);
+                const scoresResponse = await apiService.getATSScores(response.data.optimizedResumeId);
+                
+                navigate(`/result/${response.data.optimizedResumeId}`, {
+                    state: { 
+                        optimizedResumeId: response.data.optimizedResumeId,
+                        scores: scoresResponse.data 
+                    }
+                });
             }
         } catch (err: any) {
             setError(err.response?.data?.error?.message || 'Failed to optimize resume');
@@ -57,6 +69,7 @@ export const useResumeFlow = () => {
         optimizeResume,
         loading,
         error,
+        analysisData,
         clearError: () => setError(null),
     };
 };

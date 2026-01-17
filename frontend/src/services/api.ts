@@ -44,6 +44,14 @@ export const apiService = {
     },
 
     /**
+     * Get analysis data by ID
+     */
+    async getAnalysis(analysisId: string): Promise<AnalysisResponse> {
+        const { data } = await api.get<AnalysisResponse>(`/resume/analysis/${analysisId}`);
+        return data;
+    },
+
+    /**
      * Optimize resume based on analysis
      */
     async optimizeResume(analysisId: string): Promise<OptimizationResponse> {
@@ -51,6 +59,21 @@ export const apiService = {
             analysisId,
         });
 
+        return data;
+    },
+
+    /**
+     * Get ATS scores for optimized resume
+     */
+    async getATSScores(optimizedResumeId: string): Promise<{
+        success: boolean;
+        data: {
+            atsScoreBefore: number;
+            atsScoreAfter: number;
+            improvement: number;
+        };
+    }> {
+        const { data } = await api.get(`/resume/score/${optimizedResumeId}`);
         return data;
     },
 

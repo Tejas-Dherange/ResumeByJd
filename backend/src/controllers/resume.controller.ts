@@ -52,7 +52,7 @@ class ResumeController {
                     },
                     jdText,
                     mustHave: parsedJD.requirements.must_have,
-                    niceToHave: parsedJD.requirements.nice_to_have
+                    niceToHave: parsedJD.requirements.nice_to_have,
                 }
             });
 
@@ -100,13 +100,13 @@ class ResumeController {
             // Perform gap analysis
             const gapAnalysis = await gapAnalysisService.analyzeGap(parsedResume, {
                 must_have: jobDescription.mustHave,
-                nice_to_have: jobDescription.niceToHave
+                nice_to_have: jobDescription.niceToHave,
             });
 
             // Calculate ATS score (before optimization)
             const atsScore = atsScorerService.calculateScore(parsedResume, {
                 must_have: jobDescription.mustHave,
-                nice_to_have: jobDescription.niceToHave
+                nice_to_have: jobDescription.niceToHave,
             });
 
             // Validate score (handle NaN cases)
@@ -128,7 +128,15 @@ class ResumeController {
                     matchScore: validScore
                 }
             });
-
+            console.log("resume analysis");
+            
+            console.log({
+                    analysisId: analysis.id,
+                    gapAnalysis,
+                    atsScoreBefore: atsScore.after,
+                    parsedResume
+                });
+            
             res.status(200).json({
                 success: true,
                 data: {
@@ -176,7 +184,8 @@ class ResumeController {
             // Rewrite resume to strengthen weak keywords
             const optimizedContent = await resumeRewriteService.rewriteResume(
                 parsedResume,
-                analysis.weak
+                analysis.weak,
+                analysis.missing
             );
 
             // Validate for hallucinations
@@ -201,7 +210,7 @@ class ResumeController {
                 { ...parsedResume, sections: optimizedContent.sections },
                 {
                     must_have: analysis.jobDescription.mustHave,
-                    nice_to_have: analysis.jobDescription.niceToHave
+                    nice_to_have: analysis.jobDescription.niceToHave,
                 }
             );
 

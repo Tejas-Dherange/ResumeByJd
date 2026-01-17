@@ -63,6 +63,19 @@ class GapAnalysisService {
 
             const overall = (mustHavePercent * 0.7 + niceToHavePercent * 0.3); // Must-have weighted more
 
+            console.log("gap analysis");
+            
+            console.log({
+                present,
+                weak,
+                missing,
+                coverage: {
+                    mustHavePercent: Math.round(mustHavePercent),
+                    niceToHavePercent: Math.round(niceToHavePercent),
+                    overall: Math.round(overall)
+                }
+            });
+            
             return {
                 present,
                 weak,
@@ -111,7 +124,7 @@ class GapAnalysisService {
      * (Experience, Skills sections carry more weight)
      */
     private isInProminentSection(resume: ParsedResume, keyword: string): boolean {
-        const prominentSections = ['experience', 'skills', 'technical skills', 'work experience'];
+        const prominentSections = ['experience', 'skills', 'technical skills', 'work experience', 'projects'];
 
         for (const section of resume.sections) {
             const lowerTitle = section.title.toLowerCase();

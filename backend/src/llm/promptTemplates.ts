@@ -28,30 +28,66 @@ Respond with JSON in this exact format:
      * Rewrite resume content to strengthen weak areas
      */
     rewriteResume: {
-        system: `You are a professional resume writer. Your task is to enhance resume content by:
-1. Strengthening existing bullets that mention weak keywords
-2. Using stronger action verbs and quantifiable metrics
-3. NEVER adding new skills, tools, or technologies not already present
-4. Maintaining the exact structure and section order
+        system: `You are a professional resume optimizer.
 
-CRITICAL: Do NOT invent or add any skills/technologies. Only rephrase existing content.
-Always respond with valid JSON only.`,
+Your task is STRICTLY LIMITED to rewriting existing resume bullets
+that already contain weak skills.
 
-        user: (resumeJSON: string, weakKeywords: string[]) => `Optimize this resume by strengthening bullets that mention these weak keywords: ${weakKeywords.join(', ')}
+NON-NEGOTIABLE RULES:
+- Rewrite ONLY bullets that already contain the weak keywords
+- DO NOT add, imply, or introduce any new skills, tools, or technologies
+- DO NOT add any skill that is missing or not found in the resume
+- DO NOT change section titles, order, or bullet counts
+- DO NOT invent metrics, numbers, or facts
+- If a bullet cannot be meaningfully improved, return it unchanged
 
-Original Resume:
+SUCCESS CRITERIA:
+- If a bullet contains a weak keyword, the rewritten version MUST
+  more clearly show responsibility, scope, or impact for that skill
+
+OUTPUT RULE:
+- Respond ONLY with valid JSON
+- Output MUST match the input JSON structure exactly
+`,
+
+        user: 
+    
+(resumeJSON: string, weakKeywords: string[], notFoundSkills: string[]) => `
+
+### TARGET SKILLS TO STRENGTHEN (Rewrites only happen here):
+${weakKeywords.join(', ')}
+
+### STRICT NEGATIVE CONSTRAINT - DO NOT ADD THESE:
+The following skills were identified as "Not Found" in the original resume. 
+YOU MUST NOT ADD THESE TO ANY BULLETS:
+[ ${notFoundSkills.join(', ')} ]
+
+### RULES:
+1. **Targeted Rewrites Only:** Only rewrite a bullet if it contains a skill from the "TARGET SKILLS" list.
+2. **No Hallucinations:** Do not add any new technologies, tools, or "Not Found" skills listed above. 
+3. **No New Numbers:** Do not add metrics or stats that aren't already there.
+4. **Structure:** Keep each bullet as one sentence and return the EXACT JSON format provided.
+
+### ORIGINAL RESUME JSON:
 ${resumeJSON}
 
-Rules:
-- ONLY rephrase existing content
-- Make weak keywords more prominent
-- Use strong action verbs (Built, Developed, Architected, Implemented, etc.)
-- Add quantifiable metrics where possible
-- DO NOT add new technologies or skills
-- Maintain exact section structure
+Return the updated JSON:
+`},
 
-Respond with the optimized resume in the SAME JSON format.`
-    },
+// (resumeJSON: string, weakKeywords: string[]) => `Optimize this resume by strengthening bullets that mention these weak keywords: ${weakKeywords.join(', ')}
+
+// Original Resume:
+// ${resumeJSON}
+
+// Rules:
+// - ONLY rephrase existing content
+// - Make weak keywords more prominent
+// - Use strong action verbs (Built, Developed, Architected, Implemented, etc.)
+// - Add quantifiable metrics where possible
+// - DO NOT add new technologies or skills
+// - Maintain exact section structure
+
+// Respond with the optimized resume in the SAME JSON format.`
 
     /**
      * Validate for hallucinations
