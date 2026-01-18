@@ -67,7 +67,10 @@ class ATSScorerService {
         const resumeText = this.extractFullText(resume);
         const normalizedText = normalizeText(resumeText);
 
-        const allKeywords = [...requirements.must_have, ...requirements.nice_to_have];
+        const allKeywords = [
+            ...Object.keys(requirements.must_have).map(k => k.toLowerCase().trim()),
+            ...Object.keys(requirements.nice_to_have).map(k => k.toLowerCase().trim())
+        ];
         let matchedCount = 0;
 
         for (const keyword of allKeywords) {

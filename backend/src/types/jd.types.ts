@@ -2,9 +2,20 @@
  * Job Description-related TypeScript interfaces
  */
 
+/**
+ * Represents a skill with its description
+ * Key: Skill name (e.g., "React", "Node.js")
+ * Value: Short description of the skill and how it's used in the role
+ */
+export type SkillRequirements = Record<string, string>;
+
+/**
+ * Job requirements structured as must_have and nice_to_have skills
+ * Each skill maps to a description explaining its role
+ */
 export interface JobRequirements {
-    must_have: string[];    // Required skills/technologies
-    nice_to_have: string[]; // Preferred skills/technologies
+    must_have: SkillRequirements;    // Required/essential skills mapped to descriptions
+    nice_to_have: SkillRequirements; // Preferred/optional skills mapped to descriptions
 }
 
 export interface ParsedJD {

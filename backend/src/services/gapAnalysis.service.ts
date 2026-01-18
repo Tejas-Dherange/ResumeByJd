@@ -1,6 +1,8 @@
 import { GapAnalysis, JobRequirements } from '../types/jd.types';
 import { ParsedResume } from '../types/resume.types';
 import { calculateKeywordFrequency, normalizeText } from '../utils/tokenizer';
+import { geminiClient } from '../llm/gemini.client';
+import { PROMPTS } from '../llm/promptTemplates';
 
 /**
  * Gap Analysis Service
@@ -20,45 +22,38 @@ class GapAnalysisService {
         try {
             // Combine all resume text
             const resumeText = this.extractFullText(resume);
-            const normalizedResumeText = normalizeText(resumeText);
 
-            // Analyze all keywords
-            const allKeywords = [...requirements.must_have, ...requirements.nice_to_have];
+            // Use Gemini to classify keywords with semantic understanding
+            const classification = await geminiClient.generateJSON<{
+                present: string[];
+                weak: string[];
+                missing: string[];
+            }>(
+                PROMPTS.classifyKeywordStrength.user(resumeText, requirements),
+                PROMPTS.classifyKeywordStrength.system
+            );
 
-            const present: string[] = [];
-            const weak: string[] = [];
-            const missing: string[] = [];
-
-            for (const keyword of allKeywords) {
-                const classification = this.classifyKeyword(normalizedResumeText, keyword);
-
-                switch (classification) {
-                    case 'present':
-                        present.push(keyword);
-                        break;
-                    case 'weak':
-                        weak.push(keyword);
-                        break;
-                    case 'missing':
-                        missing.push(keyword);
-                        break;
-                }
-            }
+            const present = classification.present || [];
+            const weak = classification.weak || [];
+            const missing = classification.missing || [];
 
             // Calculate coverage
-            const mustHavePresent = requirements.must_have.filter(k =>
+            const mustHaveSkills = Object.keys(requirements.must_have);
+            const niceToHaveSkills = Object.keys(requirements.nice_to_have);
+            
+            const mustHavePresent = mustHaveSkills.filter(k =>
                 present.includes(k) || weak.includes(k)
             ).length;
-            const niceToHavePresent = requirements.nice_to_have.filter(k =>
+            const niceToHavePresent = niceToHaveSkills.filter(k =>
                 present.includes(k) || weak.includes(k)
             ).length;
 
-            const mustHavePercent = requirements.must_have.length > 0
-                ? (mustHavePresent / requirements.must_have.length) * 100
+            const mustHavePercent = mustHaveSkills.length > 0
+                ? (mustHavePresent / mustHaveSkills.length) * 100
                 : 100;
 
-            const niceToHavePercent = requirements.nice_to_have.length > 0
-                ? (niceToHavePresent / requirements.nice_to_have.length) * 100
+            const niceToHavePercent = niceToHaveSkills.length > 0
+                ? (niceToHavePresent / niceToHaveSkills.length) * 100
                 : 100;
 
             const overall = (mustHavePercent * 0.7 + niceToHavePercent * 0.3); // Must-have weighted more
@@ -102,42 +97,6 @@ class GapAnalysisService {
                 return `${title} ${content}`;
             })
             .join(' ');
-    }
-
-    /**
-     * Classify keyword strength in resume
-     */
-    private classifyKeyword(resumeText: string, keyword: string): 'present' | 'weak' | 'missing' {
-        const frequency = calculateKeywordFrequency(resumeText, keyword);
-
-        if (frequency === 0) {
-            return 'missing';
-        } else if (frequency >= 3) {
-            return 'present';
-        } else {
-            return 'weak';
-        }
-    }
-
-    /**
-     * Check if keyword appears in prominent sections
-     * (Experience, Skills sections carry more weight)
-     */
-    private isInProminentSection(resume: ParsedResume, keyword: string): boolean {
-        const prominentSections = ['experience', 'skills', 'technical skills', 'work experience', 'projects'];
-
-        for (const section of resume.sections) {
-            const lowerTitle = section.title.toLowerCase();
-
-            if (prominentSections.some(ps => lowerTitle.includes(ps))) {
-                const sectionText = section.content.join(' ').toLowerCase();
-                if (sectionText.includes(keyword.toLowerCase())) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }
 

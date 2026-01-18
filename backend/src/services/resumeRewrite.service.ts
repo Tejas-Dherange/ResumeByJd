@@ -1,4 +1,5 @@
 import { ParsedResume, OptimizedResumeContent } from '../types/resume.types';
+import { JobRequirements } from '../types/jd.types';
 import { geminiClient } from '../llm/gemini.client';
 import { PROMPTS } from '../llm/promptTemplates';
 
@@ -20,7 +21,8 @@ class ResumeRewriteService {
     async rewriteResume(
         originalResume: ParsedResume,
         weakKeywords: string[],
-        notFoundSkills: string[]
+        notFoundSkills: string[],
+        jdSkills: JobRequirements
     ): Promise<OptimizedResumeContent> {
         try {
             console.log('📝 Resume Rewrite Started:', {
@@ -52,7 +54,7 @@ class ResumeRewriteService {
 
             // Call LLM to optimize
             const optimizedSections = await geminiClient.generateJSON<any>(
-                PROMPTS.rewriteResume.user(resumeJSON, weakKeywords,notFoundSkills),
+                PROMPTS.rewriteResume.user(resumeJSON, weakKeywords,notFoundSkills,jdSkills),
                 PROMPTS.rewriteResume.system,
                 0.2 // Very low temperature for consistency
             );

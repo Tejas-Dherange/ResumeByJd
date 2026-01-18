@@ -27,8 +27,8 @@ model JobDescription {
   id          String   @id @default(uuid())
   resumeId    String
   jdText      String   @db.Text
-  mustHave    String[] // Array of required skills/keywords
-  niceToHave  String[] // Array of preferred skills/keywords
+  mustHave    Json     // Must-have skills: {"Skill Name": "description"}
+  niceToHave  Json     // Nice-to-have skills: {"Skill Name": "description"}
   createdAt   DateTime @default(now())
   
   // Relations

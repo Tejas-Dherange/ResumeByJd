@@ -11,9 +11,7 @@ class JDParserService {
     /**
      * Parse job description text and extract requirements
      * 
-     * Uses Gemini to classify skills into:
-     * - must_have: Required skills explicitly mentioned
-     * - nice_to_have: Preferred but optional skills
+     * Uses Gemini to classify skills into must_have and nice_to_have with descriptions
      */
     async parseJD(jdText: string): Promise<ParsedJD> {
         try {
@@ -30,21 +28,17 @@ class JDParserService {
             );
 
             // Validate response
-            if (!result.must_have || !result.nice_to_have) {
+            if (!result || !result.must_have || !result.nice_to_have) {
                 throw new Error('Invalid response format from LLM');
             }
 
-            // Normalize keywords (lowercase, trim)
-            const must_have = result.must_have.map(k => k.toLowerCase().trim()).filter(k => k.length > 0);
-            const nice_to_have = result.nice_to_have.map(k => k.toLowerCase().trim()).filter(k => k.length > 0);
+            // Calculate total keywords
+            const totalKeywords = Object.keys(result.must_have).length + Object.keys(result.nice_to_have).length;
 
             return {
-                requirements: {
-                    must_have,
-                    nice_to_have
-                },
+                requirements: result,
                 metadata: {
-                    totalKeywords: must_have.length + nice_to_have.length,
+                    totalKeywords,
                     parsedAt: new Date()
                 }
             };
@@ -66,21 +60,22 @@ class JDParserService {
         ];
 
         const lowerText = jdText.toLowerCase();
-        const found: string[] = [];
+        const must_have: Record<string, string> = {};
+        const nice_to_have: Record<string, string> = {};
 
-        techKeywords.forEach(keyword => {
+        techKeywords.forEach((keyword, index) => {
             if (lowerText.includes(keyword)) {
-                found.push(keyword);
+                const description = `${keyword} skill mentioned in job description`;
+                // Split evenly between must_have and nice_to_have
+                if (index % 2 === 0) {
+                    must_have[keyword] = description;
+                } else {
+                    nice_to_have[keyword] = description;
+                }
             }
         });
 
-        // Assume first half are must_have, rest are nice_to_have
-        const midpoint = Math.ceil(found.length / 2);
-
-        return {
-            must_have: found.slice(0, midpoint),
-            nice_to_have: found.slice(midpoint)
-        };
+        return { must_have, nice_to_have };
     }
 }
 

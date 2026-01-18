@@ -45,14 +45,21 @@ class ResumeController {
             // Parse and store job description
             const parsedJD = await jdParserService.parseJD(jdText);
 
+            // Validate and store JD requirements in correct format
+            // Format: { "Skill Name": "Short description", ... }
+            if (!parsedJD.requirements.must_have || !parsedJD.requirements.nice_to_have) {
+                throw new AppError('Invalid job description format from parser', 500);
+            }
+
             const jobDescription = await prisma.jobDescription.create({
                 data: {
                     resume: {
                         connect: { id: resume.id }
                     },
                     jdText,
-                    mustHave: parsedJD.requirements.must_have,
-                    niceToHave: parsedJD.requirements.nice_to_have,
+                    // Store as JSON - cast to any to avoid type issues with Prisma
+                    mustHave: parsedJD.requirements.must_have as any,
+                    niceToHave: parsedJD.requirements.nice_to_have as any,
                 }
             });
 
@@ -97,17 +104,17 @@ class ResumeController {
             // Parse resume
             const parsedResume = await resumeParserService.parseResume(resume.originalPath);
 
+            // Prepare job requirements in correct format
+            const jobRequirements = {
+                must_have: (jobDescription.mustHave || {}) as Record<string, string>,
+                nice_to_have: (jobDescription.niceToHave || {}) as Record<string, string>
+            };
+
             // Perform gap analysis
-            const gapAnalysis = await gapAnalysisService.analyzeGap(parsedResume, {
-                must_have: jobDescription.mustHave,
-                nice_to_have: jobDescription.niceToHave,
-            });
+            const gapAnalysis = await gapAnalysisService.analyzeGap(parsedResume, jobRequirements);
 
             // Calculate ATS score (before optimization)
-            const atsScore = atsScorerService.calculateScore(parsedResume, {
-                must_have: jobDescription.mustHave,
-                nice_to_have: jobDescription.niceToHave,
-            });
+            const atsScore = atsScorerService.calculateScore(parsedResume, jobRequirements);
 
             // Validate score (handle NaN cases)
             const validScore = isNaN(atsScore.after) ? 0 : atsScore.after;
@@ -181,11 +188,18 @@ class ResumeController {
                 analysis.resume.originalPath
             );
 
-            // Rewrite resume to strengthen weak keywords
+            // Prepare job requirements from database
+            const jobRequirements = {
+                must_have: (analysis.jobDescription.mustHave || {}) as Record<string, string>,
+                nice_to_have: (analysis.jobDescription.niceToHave || {}) as Record<string, string>
+            };
+
+            // Rewrite resume to strengthen weak keywords with job context
             const optimizedContent = await resumeRewriteService.rewriteResume(
                 parsedResume,
                 analysis.weak,
-                analysis.missing
+                analysis.missing,
+                jobRequirements
             );
 
             // Validate for hallucinations
@@ -209,8 +223,8 @@ class ResumeController {
             const newAtsScore = atsScorerService.calculateScore(
                 { ...parsedResume, sections: optimizedContent.sections },
                 {
-                    must_have: analysis.jobDescription.mustHave,
-                    nice_to_have: analysis.jobDescription.niceToHave,
+                    must_have: (analysis.jobDescription.mustHave || {}) as Record<string, string>,
+                    nice_to_have: (analysis.jobDescription.niceToHave || {}) as Record<string, string>
                 }
             );
 
